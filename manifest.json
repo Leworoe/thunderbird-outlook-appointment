@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "Outlook/Teams Appointments",
+  "description": "Get the hidden appointment from an email from outlook/teams as a .ics-file - Icon: https://fontawesome.com/",
+  "version": "1.0",
+  "author": "Leworoe - Leon Wolfgang Rönnpagel",
+  "applications": {
+    "gecko": {
+      "id": "leworoe@gmail.com",
+      "strict_min_version": "78.0"
+    }
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "message_display_action": {
+    "default_title": "Get Appointment",
+    "theme_icons": [
+      {
+        "light": "images/calendar_black.png",
+        "dark": "images/calendar_white.png",
+        "size": 64
+      }
+    ]
+  },
+  "permissions": [
+    "messagesRead",
+    "downloads",
+    "notifications"
+  ],
+  "icons": {
+    "64": "images/calendar_black.png"
+  }
+}
