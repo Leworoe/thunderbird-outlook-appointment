@@ -19,8 +19,8 @@
     "default_title": "Get Appointment",
     "theme_icons": [
       {
-        "light": "images/calendar_black.png",
-        "dark": "images/calendar_white.png",
+        "light": "images/calendar_white.png",
+        "dark": "images/calendar_black.png",
         "size": 64
       }
     ]
