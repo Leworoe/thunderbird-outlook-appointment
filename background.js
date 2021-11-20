@@ -1,3 +1,12 @@
+function base64ToBlob(base64String) {
+  const binaryString = atob(base64String);
+  const codePoints = Array(binaryString.length);
+  for (let index = 0; index < binaryString.length; index++)
+    codePoints[index] = binaryString.codePointAt(index);
+  const uint8CodePoints = Uint8Array.from(codePoints);
+  return new Blob([uint8CodePoints]);
+}
+
 let downloading = null;
 let url = null;
 
@@ -22,8 +31,7 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
   }
   raw = raw[0].replace(/\n\n$/, "");
   raw = raw.replace(/^(.|\n)*\n\n/, "");
-  const ics = atob(raw);
-  const blob = new Blob([ics]);
+  const blob = base64ToBlob(raw);
   url = URL.createObjectURL(blob);
   downloading = await browser.downloads.download(
     {
