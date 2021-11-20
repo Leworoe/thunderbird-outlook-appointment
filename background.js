@@ -24,9 +24,10 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
       var ics = atob(raw);
       var blob = new Blob([ics]);
       url = URL.createObjectURL(blob);
+      const escapedSubject = message.subject.replaceAll(/[/\\:*?"<>|]/g, " ")
       downloading = await browser.downloads.download(
         {
-          "filename": "calendar.ics",
+          "filename": `${escapedSubject}.ics`,
           "saveAs": true,
           "url": url
         }
