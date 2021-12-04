@@ -33,9 +33,10 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
   raw = raw.replace(/^(.|\n)*\n\n/, "");
   const blob = base64ToBlob(raw);
   url = URL.createObjectURL(blob);
+  const escapedSubject = message.subject.replaceAll(/[/\\:*?"<>|]/g, " ")
   downloading = await browser.downloads.download(
     {
-      "filename": "calendar.ics",
+      "filename": `${escapedSubject}.ics`,
       "saveAs": true,
       "url": url
     }
