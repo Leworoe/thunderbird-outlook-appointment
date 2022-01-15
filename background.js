@@ -19,10 +19,24 @@ async function getRawCalendar(message_id) {
   return raw;
 }
 
+async function isDarkmode() {
+  let theme = await browser.theme.getCurrent();
+  return theme.colors.icons == '#fbfbfe';
+}
+
+async function updateIcon() {
+  if (await isDarkmode()) {
+    browser.messageDisplayAction.setIcon({path: 'images/calendar_white.png'});
+  } else {
+    browser.messageDisplayAction.setIcon({path: 'images/calendar_black.png'});
+  }
+}
+
 browser.messageDisplay.onMessageDisplayed.addListener(async (tab, message) => {
   if (await getRawCalendar(message.id) === false) {
     browser.messageDisplayAction.disable(tab.id);
   } else {
+    updateIcon();
     browser.messageDisplayAction.enable(tab.id);
   }
 });
