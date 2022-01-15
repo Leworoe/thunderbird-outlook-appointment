@@ -7,15 +7,33 @@ function base64ToBlob(base64String) {
   return new Blob([uint8CodePoints]);
 }
 
+async function getRawCalendar(message_id) {
+  let raw = await browser.messages.getRaw(message_id);
+  raw = raw.replace(/\r/g, "");
+  raw = raw.match(/Content-Type: text\/calendar;(.|\n)*\n\n/);
+  if (raw === null) {
+    return false;
+  }
+  raw = raw[0].replace(/\n\n$/, "");
+  raw = raw.replace(/^(.|\n)*\n\n/, "");
+  return raw;
+}
+
+browser.messageDisplay.onMessageDisplayed.addListener(async (tab, message) => {
+  if (await getRawCalendar(message.id) === false) {
+    browser.messageDisplayAction.disable(tab.id);
+  } else {
+    browser.messageDisplayAction.enable(tab.id);
+  }
+});
+
 let downloading = null;
 let url = null;
 
 browser.messageDisplayAction.onClicked.addListener(async (tab) => {
-  const message = await browser.messageDisplay.getDisplayedMessage(tab.id)
-  let raw = await browser.messages.getRaw(message.id)
-  raw = raw.replace(/\r/g, "");
-  raw = raw.match(/Content-Type: text\/calendar;(.|\n)*\n\n/);
-  if (raw === null) {
+  const message = await browser.messageDisplay.getDisplayedMessage(tab.id);
+  let cal = await getRawCalendar(message.id);
+  if (cal === false) {
     browser.notifications.create(
       "no-appointment",
       {
@@ -29,9 +47,7 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     }, 5000);
     return;
   }
-  raw = raw[0].replace(/\n\n$/, "");
-  raw = raw.replace(/^(.|\n)*\n\n/, "");
-  const blob = base64ToBlob(raw);
+  const blob = base64ToBlob(cal);
   url = URL.createObjectURL(blob);
   const escapedSubject = message.subject.replaceAll(/[/\\:*?"<>|]/g, " ")
   downloading = await browser.downloads.download(
