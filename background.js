@@ -21,7 +21,7 @@ async function getRawCalendar(message_id) {
 
 async function isDarkmode() {
   let theme = await browser.theme.getCurrent();
-  return theme.colors?.icons == '#fbfbfe';
+  return theme.colors?.icons == '#fbfbfe' || theme.colors?.icons == 'rgb(249, 249, 250, 0.7)';
 }
 
 async function updateIcon() {
