@@ -1,22 +1,20 @@
-function base64ToBlob(base64String) {
+function base64ToText(base64String) {
   const binaryString = atob(base64String);
   const codePoints = Array(binaryString.length);
   for (let index = 0; index < binaryString.length; index++)
     codePoints[index] = binaryString.codePointAt(index);
   const uint8CodePoints = Uint8Array.from(codePoints);
-  return new Blob([uint8CodePoints]);
+  return new TextDecoder().decode(uint8CodePoints);
 }
 
-async function getRawCalendar(message_id) {
+async function getBase64invite(message_id) {
   let raw = await browser.messages.getRaw(message_id);
   raw = raw.replace(/\r/g, "");
-  raw = raw.match(/Content-Type: text\/calendar;(.|\n)*\n\n/);
-  if (raw === null) {
+  let matches = raw.match(/(?=Content-Type: text\/calendar;)(?:[\s\S]*?\n\n)(?<base64>[\s\S]*?)\n\n/);
+  if (matches === null) {
     return false;
   }
-  raw = raw[0].replace(/\n\n$/, "");
-  raw = raw.replace(/^(.|\n)*\n\n/, "");
-  return raw;
+  return matches['groups'].base64;
 }
 
 async function isDarkmode() {
@@ -32,22 +30,20 @@ async function updateIcon() {
   }
 }
 
-function replaceLocationByUrl(cal) {
+function replaceLocationByUrl(ics) {
   // Replace default location by url
-  let ics = atob(cal);
   // Another option could be to use X-MICROSOFT-SKYPETEAMSMEETINGURL
   // But it is not used by every system
-  conference_url = ics.match(/<(https:\/\/teams\.microsoft\.com.*?)>/s);
-  if (conference_url) {
-    ics = ics.replace(/LOCATION.*/, `LOCATION:${conference_url[1].replace(/\s+/g, '')}`);
-    cal = btoa(ics);
+  const conference_url = ics.match(/<(https:\/\/teams\.microsoft\.com.*?)>/s);
+  if (conference_url !== null) {
+    return ics.replace(/LOCATION.*/, `LOCATION:${conference_url[1].replace(/\s+/g, '')}`);
   }
 
-  return cal;
+  return ics;
 }
 
 browser.messageDisplay.onMessageDisplayed.addListener(async (tab, message) => {
-  if (await getRawCalendar(message.id) === false) {
+  if (await getBase64invite(message.id) === false) {
     browser.messageDisplayAction.disable(tab.id);
   } else {
     updateIcon();
@@ -60,8 +56,8 @@ let url = null;
 
 browser.messageDisplayAction.onClicked.addListener(async (tab) => {
   const message = await browser.messageDisplay.getDisplayedMessage(tab.id);
-  let cal = await getRawCalendar(message.id);
-  if (cal === false) {
+  let base64invite = await getBase64invite(message.id);
+  if (base64invite === false) {
     browser.notifications.create(
       "no-appointment",
       {
@@ -75,18 +71,23 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     }, 5000);
     return;
   }
+  let ics = base64ToText(base64invite);
+  // Remove everything that is not beween "BEGIN:VCALENDAR" and "END:VCALENDAR"
+  const ics_matched = ics.match(/(?:[\s\S]*?)(?<VCALENDAR>BEGIN:VCALENDAR(?:[\s\S]*?)END:VCALENDAR)/);
+  if (ics_matched !== null) {
+    ics = ics_matched['groups'].VCALENDAR;
+  }
 
-  cal = replaceLocationByUrl(cal);
+  ics = replaceLocationByUrl(ics);
 
-  const blob = base64ToBlob(cal);
+  const blob = new Blob([ics]);
   url = URL.createObjectURL(blob);
   const escapedSubject = message.subject.replaceAll(/[/\\:*?"<>|]/g, " ")
   downloading = await browser.downloads.download(
     {
       "filename": `${escapedSubject}.ics`,
       "saveAs": true,
-      "url": url,
-      "conflictAction": 'uniquify'
+      "url": url
     }
   );
 });
