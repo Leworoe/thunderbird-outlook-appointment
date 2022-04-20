@@ -32,6 +32,20 @@ async function updateIcon() {
   }
 }
 
+function replaceLocationByUrl(cal) {
+  // Replace default location by url
+  let ics = atob(cal);
+  // Another option could be to use X-MICROSOFT-SKYPETEAMSMEETINGURL
+  // But it is not used by every system
+  conference_url = ics.match(/<(https:\/\/teams\.microsoft\.com.*?)>/s);
+  if (conference_url) {
+    ics = ics.replace(/LOCATION.*/, `LOCATION:${conference_url[1].replace(/\s+/g, '')}`);
+    cal = btoa(ics);
+  }
+
+  return cal;
+}
+
 browser.messageDisplay.onMessageDisplayed.addListener(async (tab, message) => {
   if (await getRawCalendar(message.id) === false) {
     browser.messageDisplayAction.disable(tab.id);
@@ -61,6 +75,9 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     }, 5000);
     return;
   }
+
+  cal = replaceLocationByUrl(cal);
+
   const blob = base64ToBlob(cal);
   url = URL.createObjectURL(blob);
   const escapedSubject = message.subject.replaceAll(/[/\\:*?"<>|]/g, " ")
@@ -68,7 +85,8 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     {
       "filename": `${escapedSubject}.ics`,
       "saveAs": true,
-      "url": url
+      "url": url,
+      "conflictAction": 'uniquify'
     }
   );
 });
