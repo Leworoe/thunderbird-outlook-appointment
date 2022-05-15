@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Outlook/Teams Appointments",
   "description": "Get the hidden appointment from an email from outlook/teams as a .ics-file - Icon: https://fontawesome.com/",
-  "version": "1.1",
+  "version": "1.2",
   "author": "Leworoe - Leon Wolfgang Rönnpagel",
   "applications": {
     "gecko": {
