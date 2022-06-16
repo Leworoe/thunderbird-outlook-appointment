@@ -30,13 +30,15 @@ async function updateIcon() {
   }
 }
 
+// Replace default location by url
 function replaceLocationByUrl(ics) {
-  // Replace default location by url
+  // Remove linebreaks and initial whitespaces
+  let new_ics = ics.replace(/(\r\n |\n |\r )/g, '');
   // Another option could be to use X-MICROSOFT-SKYPETEAMSMEETINGURL
   // But it is not used by every system
-  const conference_url = ics.match(/<(https:\/\/teams\.microsoft\.com.*?)>/s);
+  const conference_url = new_ics.match(/<(https:\/\/teams\.microsoft\.com\/l\/meetup-join\/.*?)>/s);
   if (conference_url !== null) {
-    return ics.replace(/LOCATION.*/, `LOCATION:${conference_url[1].replace(/\s+/g, '')}`);
+    return new_ics.replace(/LOCATION.*/, `LOCATION:${conference_url[1].replace(/\s+/g, '')}`);
   }
 
   return ics;
